@@ -12,8 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
+import static org.mockito.BDDMockito.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -139,6 +138,17 @@ class SpecialitySDJpaServiceTest {
     }
 
     @Test
+    void findByIdBDDTestThrows() {
+        // given
+        given(specialtyRepository.findById(anyLong())).willThrow(new RuntimeException("message"));
+        // or: willThrow(new RuntimeException("message")).given(specialtyRepository).findById(anyLong());
+
+        //then
+        assertThrows(RuntimeException.class, () -> specialtyRepository.findById(anyLong()));
+        then(specialtyRepository).should().findById(anyLong());
+    }
+
+    @Test
     void saveTestSuccess() {
         // given
         Speciality speciality = new Speciality(); // used for return value
@@ -154,7 +164,7 @@ class SpecialitySDJpaServiceTest {
     }
 
     @Test
-    void deleteTestSuccess() {
+    void deleteBDDTestSuccess() {
         // given
         Speciality speciality = new Speciality();
         // when
@@ -162,5 +172,23 @@ class SpecialitySDJpaServiceTest {
         // then
         then(specialtyRepository).should().delete(any(Speciality.class));
         // or:  verify(specialtyRepository).delete(any(Speciality.class)); // or instead of any(Speciality.class) -> speciality
+    }
+
+    @Test
+    void deleteBDDTestThrows() {
+        // given
+        willThrow(new RuntimeException("message")).given(specialtyRepository).delete(any()); // used for void return type
+
+        // then
+        assertThrows(RuntimeException.class, () -> specialtyRepository.delete(new Speciality()));
+        then(specialtyRepository).should().delete(any());
+    }
+
+    @Test
+    void testDoThrow() {
+        doThrow(new RuntimeException("message")).when(specialtyRepository).delete(any());
+
+        assertThrows(RuntimeException.class, () -> specialtyRepository.delete(new Speciality()));
+        verify(specialtyRepository).delete(any());
     }
 }
