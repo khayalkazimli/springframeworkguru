@@ -18,7 +18,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class SpecialitySDJpaServiceTest {
 
-    @Mock
+    @Mock(lenient = true) // lenient added to use saveTestLambdaNoMatch() test method
     SpecialtyRepository specialtyRepository;
 
     @InjectMocks
@@ -79,8 +79,8 @@ class SpecialitySDJpaServiceTest {
         service.deleteById(1l);
 
         // then
-        then(specialtyRepository).should(atLeastOnce()).deleteById(1L);
-        then(specialtyRepository).should(atLeast(1)).deleteById(1L);
+        then(specialtyRepository).should(atLeastOnce()).deleteById(1L); // .should(timeout(100).atLeastOnce()).deleteById(1L);
+        then(specialtyRepository).should(atLeast(1)).deleteById(1L); // .should(timeout(100).atLeast(1)).deleteById(1L);
         // or:
 //        verify(specialtyRepository, atLeastOnce()).deleteById(1l);
 //        verify(specialtyRepository, atLeast(1)).deleteById(1l);
@@ -117,7 +117,7 @@ class SpecialitySDJpaServiceTest {
         Speciality foundSpeciality = service.findById(1L);
         // then
         assertNotNull(foundSpeciality);
-        then(specialtyRepository).should().findById(anyLong());
+        then(specialtyRepository).should().findById(anyLong()); // .should(timeout(100)).findById(anyLong());
         // or: verify(specialtyRepository).findById(1L); // or instead of 1l -> anyLong()
     }
 
@@ -128,11 +128,11 @@ class SpecialitySDJpaServiceTest {
         given(specialtyRepository.findById(anyLong())).willReturn(Optional.of(speciality));
 
         //when
-        Speciality foundSpeciality = service.findById(1L);
+        Speciality foundSpeciality = service.findById(1L); // .findById(anyLong());
 
         //then
         assertNotNull(foundSpeciality);
-        then(specialtyRepository).should().findById(anyLong());
+        then(specialtyRepository).should().findById(anyLong()); // .should(timeout(100)).findById(anyLong());
         then(specialtyRepository).shouldHaveNoMoreInteractions();
 //or without BDD context:  verify(specialtyRepository).findById(anyLong());
     }
@@ -190,5 +190,43 @@ class SpecialitySDJpaServiceTest {
 
         assertThrows(RuntimeException.class, () -> specialtyRepository.delete(new Speciality()));
         verify(specialtyRepository).delete(any());
+    }
+
+    @Test
+    void saveTestLambda() {
+        // given
+        final String myDescription = "yellow";
+
+        Speciality speciality = new Speciality();
+        speciality.setDescription(myDescription);
+        speciality.setId(1L);
+
+        given(specialtyRepository.save(argThat(arg -> arg.getDescription().equals(myDescription)))).willReturn(speciality);
+
+        // when
+        Speciality savedSpeciality = service.save(speciality);
+        // then
+        assertEquals(1L, savedSpeciality.getId());
+        assertEquals("yellow", savedSpeciality.getDescription());
+        then(specialtyRepository).should().save(savedSpeciality);
+
+    }
+
+    @Test
+    void saveTestLambdaNoMatch() {
+        // given
+        final String myDescription = "yellow";
+
+        Speciality speciality = new Speciality();
+        speciality.setDescription("red");
+        speciality.setId(1L);
+
+        given(specialtyRepository.save(argThat(arg -> arg.getDescription().equals(myDescription)))).willReturn(speciality);
+
+        // when
+        Speciality savedSpeciality = service.save(speciality);
+        // then
+        assertNull(savedSpeciality);
+        then(specialtyRepository).should().save(any());
     }
 }
