@@ -9,6 +9,7 @@ public class HearingInterpreter {
     public HearingInterpreter(WordProducer wordProducer) {
         this.wordProducer = wordProducer;
     }
+
     public String whatIHeard(){
         String word = wordProducer.getWord();
 
